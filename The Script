@@ -1,0 +1,127 @@
+-- Load the Rayfield UI Library
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- Create the main window
+local Window = Rayfield:CreateWindow({
+   Name = "skibidi sigma",
+   LoadingTitle = "Loading skibidi sigma...",
+   LoadingSubtitle = "by You",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil, -- Leave nil if you don't want to specify a folder
+      FileName = "SkibidiSigmaUI"
+   }
+})
+
+-- Create the Main tab
+local MainTab = Window:CreateTab("Main", 4483362458) -- 4483362458 is an example image ID for an icon
+
+-- Create a Button (for Infinite Yield)
+local Button = MainTab:CreateButton({
+   Name = "Infinite Yield",
+   Callback = function()
+       loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+   end,
+})
+
+-- Function to get the player's tycoon name
+local function getPlayerTycoonName()
+    local player = game.Players.LocalPlayer
+    local tycoonsFolder = workspace.Tycoons.Tycoons
+
+    -- Loop through all tycoons in the Tycoons folder
+    for _, tycoon in pairs(tycoonsFolder:GetChildren()) do
+        -- Check if the tycoon has an Owner ObjectValue
+        if tycoon:FindFirstChild("Owner") and tycoon.Owner:IsA("ObjectValue") then
+            -- If the Owner's value matches the player's name, return the tycoon name
+            if tycoon.Owner.Value == player then
+                return tycoon.Name  -- This will return "Ice", "Lightning", etc.
+            end
+        end
+    end
+    return nil -- Return nil if the player doesn't own any tycoon
+end
+
+-- Initialize the toggle for Auto Collecting
+local IsAutoCollecting = false
+
+-- Create a Toggle for Auto Collect
+local AutoCollectToggle = MainTab:CreateToggle({
+    Name = "Toggle Auto Collect",
+    CurrentValue = false,
+    Flag = "AutoCollectToggle", -- Flag to track the toggle state
+    Callback = function(state)
+        IsAutoCollecting = state
+        
+        if IsAutoCollecting then
+            -- Get the player's tycoon name dynamically
+            local tycoonName = getPlayerTycoonName()
+            
+            if tycoonName then  -- Ensure the player owns a tycoon
+                -- Start auto-collecting in a separate thread
+                spawn(function()
+                    while IsAutoCollecting do
+                        -- Use the dynamically obtained tycoon name
+                        local touchInterest = workspace.Tycoons.Tycoons[tycoonName].Essentials.Giver.TouchInterest
+                        local player = game.Players.LocalPlayer
+                        local character = player.Character or player.CharacterAdded:Wait()
+
+                        -- Fire TouchInterest
+                        firetouchinterest(character.PrimaryPart, touchInterest.Parent, 0)
+                        firetouchinterest(character.PrimaryPart, touchInterest.Parent, 1)
+
+                        -- Wait for a short period before repeating
+                        wait(0.1)
+                    end
+                end)
+            else
+                Rayfield:Notify({
+                   Title = "No Tycoon Found",
+                   Content = "You don't own any tycoon!",
+                   Duration = 6.5,
+                   Image = 4483362458,
+                   Actions = {
+                      Ignore = {
+                         Name = "Okay!",
+                         Callback = function() print("No tycoon owned.") end
+                      },
+                   },
+                })
+            end
+        end
+    end,
+})
+
+-- Create a Button to print a message (as a test button)
+local PrintButton = MainTab:CreateButton({
+   Name = "Print Message",
+   Callback = function()
+       print("hi")
+   end,
+})
+
+-- Toggle variable for auto-clicker
+local isAutoClicking = false
+
+-- Create a Toggle for Dropper Autoclick
+local AutoClickToggle = MainTab:CreateToggle({
+    Name = "Dropper Autoclick",
+    CurrentValue = false,
+    Flag = "AutoClickToggle", -- Flag to track the toggle state
+    Callback = function(state)
+        isAutoClicking = state
+        
+        -- If toggle is on, start the auto-clicker loop
+        if isAutoClicking then
+            spawn(function()
+                while isAutoClicking do
+                    wait(0.1)
+                    local tycoonName = getPlayerTycoonName()
+                    if tycoonName then
+                        fireclickdetector(workspace.Tycoons.Tycoons[tycoonName].PurchasedObjects.Mine.Model.Clicker.ClickDetector)
+                    end
+                end
+            end)
+        end
+    end,
+})
