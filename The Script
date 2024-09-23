@@ -5,7 +5,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
    Name = "skibidi sigma",
    LoadingTitle = "Loading skibidi sigma...",
-   LoadingSubtitle = "by You",
+   LoadingSubtitle = "by @decryp1",
    ConfigurationSaving = {
       Enabled = true,
       FolderName = nil, -- Leave nil if you don't want to specify a folder
@@ -14,14 +14,72 @@ local Window = Rayfield:CreateWindow({
 })
 
 -- Create the Main tab
-local MainTab = Window:CreateTab("Main", 4483362458) -- 4483362458 is an example image ID for an icon
+local MainTab = Window:CreateTab("Main", 4483362458) -- Example image ID for an icon
 
--- Create a Button (for Infinite Yield)
-local Button = MainTab:CreateButton({
-   Name = "Infinite Yield",
-   Callback = function()
-       loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
-   end,
+-- Create the Fun Stuff tab
+local FunStuffTab = Window:CreateTab("Fun Stuff", 4483362458) -- Example image ID for the Fun Stuff tab
+
+-- Dropdown for font selection (on "Fun Stuff" tab)
+local selectedFont = Enum.Font.FredokaOne -- Default font
+
+local FontDropdown = FunStuffTab:CreateDropdown({
+    Name = "Select Font",
+    Options = {
+        "FredokaOne", 
+        "ArialBold", 
+        "GothamBold", 
+        "Cartoon"
+    },
+    CurrentOption = "FredokaOne", -- Default option
+    Flag = "FontDropdown",
+    Callback = function(option)
+        if option == "FredokaOne" then
+            selectedFont = Enum.Font.FredokaOne
+        elseif option == "ArialBold" then
+            selectedFont = Enum.Font.ArialBold
+        elseif option == "GothamBold" then
+            selectedFont = Enum.Font.GothamBold
+        elseif option == "Cartoon" then
+            selectedFont = Enum.Font.Cartoon
+        end
+    end,
+})
+
+-- Color Picker for the chat message (on "Fun Stuff" tab)
+local selectedColor = Color3.new(0.000000, 0.968627, 1.000000) -- Default color
+
+local ColorPicker = FunStuffTab:CreateColorPicker({
+    Name = "Select Message Color",
+    Color = selectedColor,
+    Flag = "MessageColorPicker",
+    Callback = function(color)
+        selectedColor = color
+    end,
+})
+
+-- Textbox for custom chat message input (on "Fun Stuff" tab)
+local customMessage = "wow guys you really are great at this game" -- Default message
+
+local MessageTextbox = FunStuffTab:CreateInput({
+    Name = "Custom Chat Message",
+    PlaceholderText = "Type your message here...",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(input)
+        customMessage = input -- Update the custom message with the user's input
+    end,
+})
+
+-- Create a Button to send the custom message with the selected font and color
+local SendMessageButton = FunStuffTab:CreateButton({
+    Name = "Send Custom Chat Message",
+    Callback = function()
+        game.StarterGui:SetCore("ChatMakeSystemMessage", {
+            Text = customMessage, -- Use the custom message from the textbox
+            Color = selectedColor, -- Use the selected color
+            Font = selectedFont, -- Use the selected font
+            FontSize = Enum.FontSize.Size32 -- Font size remains static
+        })
+    end,
 })
 
 -- Function to get the player's tycoon name
@@ -47,7 +105,7 @@ local IsAutoCollecting = false
 
 -- Create a Toggle for Auto Collect
 local AutoCollectToggle = MainTab:CreateToggle({
-    Name = "Toggle Auto Collect",
+    Name = "Auto Collect Cash",
     CurrentValue = false,
     Flag = "AutoCollectToggle", -- Flag to track the toggle state
     Callback = function(state)
@@ -92,13 +150,6 @@ local AutoCollectToggle = MainTab:CreateToggle({
     end,
 })
 
--- Create a Button to print a message (as a test button)
-local PrintButton = MainTab:CreateButton({
-   Name = "Print Message",
-   Callback = function()
-       print("hi")
-   end,
-})
 
 -- Toggle variable for auto-clicker
 local isAutoClicking = false
@@ -124,4 +175,85 @@ local AutoClickToggle = MainTab:CreateToggle({
             end)
         end
     end,
+})
+
+
+-- Function to fire all TouchInterests within the Tycoons path
+local function fireAllTouchInterests()
+    local tycoonsFolder = workspace:WaitForChild("Tycoons"):WaitForChild("Tycoons")
+
+    -- Loop through each tycoon in the Tycoons folder
+    for _, tycoon in pairs(tycoonsFolder:GetChildren()) do
+        -- Check if the tycoon has PurchasedObjects
+        local purchasedObjects = tycoon:FindFirstChild("PurchasedObjects")
+        if purchasedObjects then
+            -- Loop through the PurchasedObjects to find Givers
+            for _, object in pairs(purchasedObjects:GetChildren()) do
+                if object:FindFirstChild("Giver") then
+                    local giver = object.Giver
+                    -- Check if the Giver has a TouchInterest
+                    if giver:FindFirstChild("TouchInterest") then
+                        local touchInterest = giver.TouchInterest
+                        local player = game.Players.LocalPlayer
+                        local character = player.Character or player.CharacterAdded:Wait()
+
+                        -- Fire the TouchInterest for the player's character
+                        firetouchinterest(character.PrimaryPart, giver, 0)
+                        firetouchinterest(character.PrimaryPart, giver, 1)
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Create a Button to fire all TouchInterests under the Tycoons path
+local FireTouchInterestsButton = MainTab:CreateButton({
+    Name = "Get All Weapons",
+    Callback = function()
+        fireAllTouchInterests()
+        Rayfield:Notify({
+            Title = "Success",
+            Content = "All TouchInterests in Tycoons have been fired.",
+            Duration = 5,
+            Image = 4483362458 -- Optional image
+        })
+    end,
+})
+
+-- Function to delete all "Lasers" under the OwnerOnlyDoor in PurchasedObjects
+local function deleteLasersInTycoon()
+    local tycoonPath = workspace:WaitForChild("Tycoons"):WaitForChild("Tycoons")
+    for _, tycoon in pairs(tycoonPath:GetChildren()) do
+        -- Check if PurchasedObjects and OwnerOnlyDoor exist, then delete Lasers
+        local purchasedObjects = tycoon:FindFirstChild("PurchasedObjects")
+        if purchasedObjects and purchasedObjects:FindFirstChild("OwnerOnlyDoor") then
+            local ownerOnlyDoor = purchasedObjects.OwnerOnlyDoor
+            if ownerOnlyDoor:FindFirstChild("Lasers") then
+                ownerOnlyDoor.Lasers:Destroy() -- Delete the Lasers part
+            end
+        end
+    end
+end
+
+-- Create a Button to delete Lasers under OwnerOnlyDoor
+local DeleteLasersButton = MainTab:CreateButton({
+    Name = "Delete All OwnerOnlyDoor Lasers",
+    Callback = function()
+        deleteLasersInTycoon()
+        Rayfield:Notify({
+            Title = "Success",
+            Content = "Deleted all Lasers under OwnerOnlyDoor parts.",
+            Duration = 5,
+            Image = 4483362458 -- Optional image
+        })
+    end,
+})
+
+-- Create a Button (for Infinite Yield)
+local Button = MainTab:CreateButton({
+   Name = "Infinite Yield",
+   Callback = function()
+       loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+   end,
 })
